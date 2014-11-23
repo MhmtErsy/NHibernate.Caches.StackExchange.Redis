@@ -1,11 +1,11 @@
 <?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>NHibernate.Caches.Redis</id>
+    <id>NHibernate.Caches.StackExchange.Redis</id>
     <version>1.0.0.0</version>
-    <authors>Adrian Phinney</authors>
+    <authors>Adrian Phinney, Oskar Gewalli, Mattias Jakobsson, Sergey Bogdanov</authors>
     <licenseUrl>http://opensource.org/licenses/MIT</licenseUrl>
-    <projectUrl>http://github.com/TheCloudlessSky/NHibernate.Caches.Redis</projectUrl>
+    <projectUrl>https://github.com/wallymathieu/NHibernate.Caches.StackExchange.Redis</projectUrl>
     <!--<iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>-->
     <description>An NHibernate caching provider for Redis.</description>

@@ -1,10 +1,14 @@
 ﻿using System;
 using NHibernate.Cfg;
-using FluentNHibernate.Cfg;
-using FluentNHibernate.Cfg.Db;
 using NHibernate.Tool.hbm2ddl;
 using System.IO;
 using Xunit;
+using NHibernate;
+using NHibernate.Driver;
+using NHibernate.Dialect;
+using System.Data.SQLite;
+
+
 namespace NHibernate.Caches.StackExchange.Redis.Tests
 {
     public class RedisCacheIntegrationTests : RedisTest
@@ -19,17 +23,32 @@ namespace NHibernate.Caches.StackExchange.Redis.Tests
 
             if (configuration == null)
             {
-                configuration = Fluently.Configure()
-                    .Database(
-                        SQLiteConfiguration.Standard.UsingFile("tests.db")
-                    )
-                    .Mappings(m => m.FluentMappings.Add(typeof(PersonMapping)))
-                    .ExposeConfiguration(cfg => cfg.SetProperty(NHibernate.Cfg.Environment.GenerateStatistics, "true"))
-                    .Cache(c => c.UseQueryCache().UseSecondLevelCache().ProviderClass<RedisCacheProvider>())
-                    .BuildConfiguration();
-            }
+				configuration = new Configuration();
+				configuration.DataBaseIntegration(x =>
+					{
+                        x.ConnectionString = "Data Source=tests.db;Version=3;New=True:";
+						x.Driver<SQLite20Driver>();
+                        x.Dialect<SQLiteDialect>();
+					});
+                configuration.AddAssembly(this.GetType().Assembly);
+                configuration.Cache(x =>
+                {
+                    x.UseQueryCache = true;
+                    x.Provider<RedisCacheProvider>();
+                    x.DefaultExpiration = 100000;
+                });
+                configuration.EntityCache<Person>(x =>
+                {
+                    x.Strategy = EntityCacheUsage.ReadWrite;
+                });
 
-            new SchemaExport(configuration).Create(false, true);
+                configuration.SetProperty(NHibernate.Cfg.Environment.GenerateStatistics, "true");
+                configuration.SetProperty(NHibernate.Cfg.Environment.UseSecondLevelCache, "true");
+                configuration.SetProperty(NHibernate.Cfg.Environment.UseQueryCache, "true");
+                
+                var schema = new SchemaExport(configuration);
+                schema.Create(true, true);
+            }
         }
 
         [Fact]
@@ -49,8 +68,9 @@ namespace NHibernate.Caches.StackExchange.Redis.Tests
                 UsingSession(sf, session =>
                 {
                     session.Get<Person>(personId);
-                    Assert.Equal(1, sf.Statistics.SecondLevelCacheMissCount);
-                    Assert.Equal(1, sf.Statistics.SecondLevelCachePutCount);
+                }, session => {
+                    Assert.Equal("miss: 1, put: 1", string.Format("miss: {0}, put: {1}",
+                        sf.Statistics.SecondLevelCacheMissCount, sf.Statistics.SecondLevelCachePutCount));
                 });
 
                 sf.Statistics.Clear();
@@ -58,9 +78,9 @@ namespace NHibernate.Caches.StackExchange.Redis.Tests
                 UsingSession(sf, session =>
                 {
                     session.Get<Person>(personId);
-                    Assert.Equal(1, sf.Statistics.SecondLevelCacheHitCount);
-                    Assert.Equal(0, sf.Statistics.SecondLevelCacheMissCount);
-                    Assert.Equal(0, sf.Statistics.SecondLevelCachePutCount);
+                },session=>{
+                    Assert.Equal("hit: 1, miss: 0, put: 0", string.Format("hit: {0}, miss: {1}, put: {2}",
+                        sf.Statistics.SecondLevelCacheHitCount, sf.Statistics.SecondLevelCacheMissCount, sf.Statistics.SecondLevelCachePutCount));
                 });
             }
         }
@@ -70,13 +90,14 @@ namespace NHibernate.Caches.StackExchange.Redis.Tests
             return configuration.BuildSessionFactory();
         }
 
-        private void UsingSession(ISessionFactory sessionFactory, Action<ISession> action)
+        private void UsingSession(ISessionFactory sessionFactory, Action<ISession> action, Action<ISession> asserts=null)
         {
             using (var session = sessionFactory.OpenSession())
             using (var transaction = session.BeginTransaction())
             {
                 action(session);
                 transaction.Commit();
+                if (asserts!=null) asserts(session);
             }
         }
     }

@@ -80,9 +80,6 @@
     <Reference Include="StackExchange.Redis">
       <HintPath>..\packages\StackExchange.Redis.1.0.371\lib\net40\StackExchange.Redis.dll</HintPath>
     </Reference>
-    <Reference Include="FluentNHibernate">
-      <HintPath>..\packages\FluentNHibernate.1.4.0.0\lib\net35\FluentNHibernate.dll</HintPath>
-    </Reference>
     <Reference Include="NHibernate">
       <HintPath>..\packages\NHibernate.4.0.2.4000\lib\net40\NHibernate.dll</HintPath>
     </Reference>
@@ -97,7 +94,6 @@
     <Compile Include="RedisCacheConnectionSettingsTests.cs" />
     <Compile Include="RedisCacheIntegrationTests.cs" />
     <Compile Include="Person.cs" />
-    <Compile Include="PersonMapping.cs" />
     <Compile Include="RedisCacheTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RedisTest.cs" />
@@ -133,6 +129,9 @@
       <Project>{1B50164C-DB00-4109-A0D4-E2868ABFEDAF}</Project>
       <Name>NHibernate.Caches.StackExchange.Redis</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Person.hbm.xml" />
   </ItemGroup>
   <Import Project="$(SolutionDir)\.nuget\NuGet.targets" Condition="Exists('$(SolutionDir)\.nuget\NuGet.targets')" />
   <Import Project="..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets" Condition="Exists('..\packages\Microsoft.Bcl.Build.1.0.21\build\Microsoft.Bcl.Build.targets')" />
